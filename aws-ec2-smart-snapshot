@@ -26,8 +26,16 @@
 #
 ###############################################################################
 
+trap 'myexit 1' 1 2 3 15
+
 MY_INSTANCE_ID=$1
 
+# {{{ myexit() {
+myexit() {
+  unfreeze_device
+  exit $1
+}
+# }}}
 # {{{ log()
 
 log() {
@@ -95,7 +103,7 @@ create_snapshot() {
 
     if [ $retval != 0 ]; then
       log ERROR  "Can't obtain VolumeId [CODE=$retval]"
-      exit $retval
+      myexit $retval
     fi
 
   hostname=`hostname`
@@ -110,7 +118,7 @@ create_snapshot() {
 
     if [ $retval != 0 ]; then
       log ERROR  "Can't obtain Device [CODE=$retval]"
-      exit $retval
+      myexit $retval
     fi
 
     freeze_device
@@ -127,7 +135,7 @@ create_snapshot() {
 
     if [ $retval != 0 ]; then
       log ERROR  "Failed to take a snapshot [CODE=$retval]"
-      exit $retval
+      myexit $retval
     fi
 
     unfreeze_device
@@ -142,7 +150,7 @@ create_snapshot() {
 
     if [ $retval != 0 ]; then
       log ERROR  "Failed to add tags [CODE=$retval]"
-      exit $retval
+      myexit $retval
     fi
   done
 }
