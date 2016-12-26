@@ -25,6 +25,9 @@
 # SOFTWARE.
 #
 ###############################################################################
+
+MY_INSTANCE_ID=$1
+
 # {{{ get_mount_path()
 
 freeze_device() {
@@ -60,7 +63,11 @@ unfreeze_device() {
 # {{{ create_snapshot()
 
 create_snapshot() {
-  my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
+  if [ "$MY_INSTANCE_ID" != "" ]; then
+    my_instance_id=$MY_INSTANCE_ID
+  else
+    my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
+  fi
 
   volume_ids=`aws ec2 describe-volumes \
     --filter \
