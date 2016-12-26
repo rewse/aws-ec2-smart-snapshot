@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/local/sbin/aws-ec2-smart-snapshot >> /var/log/aws-ec2-smart-snapshot.log 2>&1

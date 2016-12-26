@@ -1,0 +1,3 @@
+/var/log/aws-ec2-smart-snapshot.log {
+  missingok
+}
