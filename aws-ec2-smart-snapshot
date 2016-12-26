@@ -125,6 +125,64 @@ create_snapshot() {
 }
 
 # }}}
+# {{{ purge_old()
+
+purge_old() {
+  for volume_id in $volume_ids; do
+    aws ec2 describe-snapshots \
+      --filters Name=volume-id,Values=$volume_id \
+      --query 'Snapshots[*].[StartTime,SnapshotId]' \
+      --output text > /tmp/snapshots.lst
+
+    local retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Can't obtain SnapshotId [CODE=$retval]"
+      myexit $retval
+    fi
+
+    local num_snapshots=`aws ec2 describe-tags \
+      --filters \
+        Name=resource-id,Values=$volume_id \
+        Name=key,Values="# Auto-Snapshot" \
+      --query 'Tags[*].[Value]' \
+      --output text`
+
+    local retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Can't obtain # of Auto-Snapshot [CODE=$retval]"
+      myexit $retval
+    fi
+
+    if [ "$num_snapshots" == "" ]; then
+      local num_snapshots=90
+    fi
+
+    local num_rows=`cat /tmp/snapshots.lst | wc -l`
+    local num_deleted=`expr $num_rows - $num_snapshots`
+
+    if [ $num_deleted -le 0 ]; then
+      return
+    fi
+
+    local deleted_snapshots=`cat /tmp/snapshots.lst | sort | head -n $num_deleted | awk '{print $2}'`
+
+    for deleted_snapshot in $deleted_snapshots; do
+      log NOTICE "Delete a snapshot $deleted_snapshot"
+      aws ec2 delete-snapshot --snapshot-id $deleted_snapshot
+
+      local retval=$?
+
+      if [ $retval != 0 ]; then
+        log ERROR  "Failed to delete the snapshot [CODE=$retval]"
+        myexit $retval
+      fi
+    done
+  done
+}
+
+# }}}
 # {{{ freeze_device()
 
 freeze_device() {
@@ -162,5 +220,7 @@ unfreeze_device() {
 obtain_volume_ids
 
 create_snapshot
+
+purge_old
 
 # }}}
