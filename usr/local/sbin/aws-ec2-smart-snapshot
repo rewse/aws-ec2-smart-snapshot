@@ -219,6 +219,11 @@ unfreeze_device() {
 # }}}
 # {{{ Main
 
+if [ `id -u` != 0 ]; then
+  log ERROR "Only root can execute."
+  myexit 1
+fi
+
 obtain_volume_ids
 
 create_snapshot
