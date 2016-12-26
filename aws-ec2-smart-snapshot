@@ -56,7 +56,7 @@ obtain_volume_ids() {
   my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
 
   volume_ids=`aws ec2 describe-volumes \
-    --filter \
+    --filters \
       Name=attachment.instance-id,Values=$my_instance_id \
       Name=tag-key,Values="Need Auto-Snapshot" \
       Name=tag-value,Values=yes \
@@ -79,7 +79,7 @@ create_snapshot() {
 
   for volume_id in $volume_ids; do
     device=`aws ec2 describe-volumes \
-      --filter Name=volume-id,Values=$volume_id \
+      --filters Name=volume-id,Values=$volume_id \
       --query "Volumes[*].Attachments[*].[Device]" \
       --output text`
 
