@@ -223,6 +223,8 @@ obtain_volume_ids
 
 create_snapshot
 
+# TODO: purge_excess
+
 purge_old
 
 # }}}
