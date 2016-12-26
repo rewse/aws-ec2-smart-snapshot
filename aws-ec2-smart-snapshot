@@ -31,10 +31,12 @@ trap 'myexit 1' 1 2 3 15
 MY_INSTANCE_ID=$1
 
 # {{{ myexit() {
+
 myexit() {
   unfreeze_device
   exit $1
 }
+
 # }}}
 # {{{ log()
 
@@ -50,41 +52,9 @@ log() {
 }
 
 # }}}
-# {{{ get_mount_path()
+# {{{ obtain_volume_ids()
 
-freeze_device() {
-  virt_device=`echo $device | sed 's!/dev/sd!/dev/xvd!'`
-  mount_paths=`grep $virt_device /etc/fstab | awk '{print $2}'`
-
-  if [ "$mount_paths" == "" ]; then
-    vg_name=`pvs | grep $virt_device | awk '{print $2}'`
-    mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
-  fi
-
-  if [ "$mount_paths" == "" ]; then
-    log WARNING "Can't obtain the paths $device mounting"
-  fi
-
-  for mount_path in $mount_paths; do
-    log NOTICE "Freezing $mount_path..."
-    xfs_freeze -f $mount_path
-  done
-}
-
-# }}}
-# {{{ unfreeze_device()
-
-unfreeze_device() {
-  for mount_path in $mount_paths; do
-    log NOTICE "Unfreezing $mount_path..."
-    xfs_freeze -u $mount_path
-  done
-}
-
-# }}}
-# {{{ create_snapshot()
-
-create_snapshot() {
+obtain_volume_ids() {
   if [ "$MY_INSTANCE_ID" != "" ]; then
     my_instance_id=$MY_INSTANCE_ID
   else
@@ -99,13 +69,18 @@ create_snapshot() {
     --query "Volumes[*].[VolumeId]" \
     --output text`
 
-    retval=$?
+  retval=$?
 
-    if [ $retval != 0 ]; then
-      log ERROR  "Can't obtain VolumeId [CODE=$retval]"
-      myexit $retval
-    fi
+  if [ $retval != 0 ]; then
+    log ERROR  "Can't obtain VolumeId [CODE=$retval]"
+    myexit $retval
+  fi
+}
 
+# }}}
+# {{{ create_snapshot()
+
+create_snapshot() {
   hostname=`hostname`
 
   for volume_id in $volume_ids; do
@@ -156,7 +131,41 @@ create_snapshot() {
 }
 
 # }}}
+# {{{ freeze_device()
+
+freeze_device() {
+  virt_device=`echo $device | sed 's!/dev/sd!/dev/xvd!'`
+  mount_paths=`grep $virt_device /etc/fstab | awk '{print $2}'`
+
+  if [ "$mount_paths" == "" ]; then
+    vg_name=`pvs | grep $virt_device | awk '{print $2}'`
+    mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
+  fi
+
+  if [ "$mount_paths" == "" ]; then
+    log WARNING "Can't obtain the paths $device mounting"
+  fi
+
+  for mount_path in $mount_paths; do
+    log NOTICE "Freezing $mount_path..."
+    xfs_freeze -f $mount_path
+  done
+}
+
+# }}}
+# {{{ unfreeze_device()
+
+unfreeze_device() {
+  for mount_path in $mount_paths; do
+    log NOTICE "Unfreezing $mount_path..."
+    xfs_freeze -u $mount_path
+  done
+}
+
+# }}}
 # {{{ Main
+
+obtain_volume_ids
 
 create_snapshot
 
