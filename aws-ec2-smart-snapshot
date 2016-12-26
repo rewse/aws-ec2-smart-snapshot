@@ -141,7 +141,7 @@ purge_old() {
       myexit $retval
     fi
 
-    local num_snapshots=`aws ec2 describe-tags \
+    local num_keeped=`aws ec2 describe-tags \
       --filters \
         Name=resource-id,Values=$volume_id \
         Name=key,Values="# Auto-Snapshot" \
@@ -155,12 +155,12 @@ purge_old() {
       myexit $retval
     fi
 
-    if [ "$num_snapshots" == "" ]; then
-      local num_snapshots=90
+    if [ "$num_keeped" == "" ]; then
+      local num_keeped=90
     fi
 
     local num_rows=`cat /tmp/snapshots.lst | wc -l`
-    local num_deleted=`expr $num_rows - $num_snapshots`
+    local num_deleted=`expr $num_rows - $num_keeped`
 
     if [ $num_deleted -le 0 ]; then
       return
