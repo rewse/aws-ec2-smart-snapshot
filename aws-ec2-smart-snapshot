@@ -193,7 +193,7 @@ freeze_device() {
 
   if [ "$mount_paths" == "" ]; then
     local vg_name=`pvs | grep $virt_device | awk '{print $2}'`
-    local mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
+    mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
   fi
 
   if [ "$mount_paths" == "" ]; then
