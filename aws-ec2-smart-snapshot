@@ -28,8 +28,6 @@
 
 trap 'myexit 1' 1 2 3 15
 
-MY_INSTANCE_ID=$1
-
 # {{{ myexit() {
 
 myexit() {
@@ -55,11 +53,7 @@ log() {
 # {{{ obtain_volume_ids()
 
 obtain_volume_ids() {
-  if [ "$MY_INSTANCE_ID" != "" ]; then
-    my_instance_id=$MY_INSTANCE_ID
-  else
-    my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
-  fi
+  my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
 
   volume_ids=`aws ec2 describe-volumes \
     --filter \
