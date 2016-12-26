@@ -28,6 +28,20 @@
 
 MY_INSTANCE_ID=$1
 
+# {{{ log()
+
+log() {
+  pri=$1
+  msg=$2
+
+  if [ $pri == NOTICE ]; then
+    echo "`LANG=C date '+%b %e %T'` [$pri] $msg"
+  else
+    echo "`LANG=C date '+%b %e %T'` [$pri] $msg" >&2
+  fi
+}
+
+# }}}
 # {{{ get_mount_path()
 
 freeze_device() {
@@ -40,11 +54,11 @@ freeze_device() {
   fi
 
   if [ "$mount_paths" == "" ]; then
-    echo "<Warning> Can't recognize the paths $device mounting" >&2
+    log WARNING "Can't obtain the paths $device mounting"
   fi
 
   for mount_path in $mount_paths; do
-    echo "Freezing $mount_path..."
+    log NOTICE "Freezing $mount_path..."
     xfs_freeze -f $mount_path
   done
 }
@@ -54,7 +68,7 @@ freeze_device() {
 
 unfreeze_device() {
   for mount_path in $mount_paths; do
-    echo "Unfreezing $mount_path..."
+    log NOTICE "Unfreezing $mount_path..."
     xfs_freeze -u $mount_path
   done
 }
@@ -77,6 +91,13 @@ create_snapshot() {
     --query "Volumes[*].[VolumeId]" \
     --output text`
 
+    retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Can't obtain VolumeId [CODE=$retval]"
+      exit $retval
+    fi
+
   hostname=`hostname`
 
   for volume_id in $volume_ids; do
@@ -85,15 +106,29 @@ create_snapshot() {
       --query "Volumes[*].Attachments[*].[Device]" \
       --output text`
 
+    retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Can't obtain Device [CODE=$retval]"
+      exit $retval
+    fi
+
     freeze_device
 
-    ecno "Taking a snapshot..."
+    log NOTICE "Taking a snapshot..."
 
     snapshot_id=`aws ec2 create-snapshot \
       --volume-id $volume_id \
       --description "Created by aws-ec2-smart-snapshot($hostname) from $volume_id($device)" \
       --query "[SnapshotId]" \
       --output text`
+
+    retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Failed to take a snapshot [CODE=$retval]"
+      exit $retval
+    fi
 
     unfreeze_device
 
@@ -102,6 +137,13 @@ create_snapshot() {
       --tags \
         Key=Name,Value="$hostname $device" \
         Key=CreatedBy,Value=aws-ec2-smart-snapshot
+
+    retval=$?
+
+    if [ $retval != 0 ]; then
+      log ERROR  "Failed to add tags [CODE=$retval]"
+      exit $retval
+    fi
   done
 }
 
