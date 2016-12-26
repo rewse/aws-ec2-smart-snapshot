@@ -39,8 +39,8 @@ myexit() {
 # {{{ log()
 
 log() {
-  pri=$1
-  msg=$2
+  local pri=$1
+  local msg=$2
 
   if [ $pri == NOTICE ]; then
     echo "`LANG=C date '+%b %e %T'` [$pri] $msg"
@@ -53,7 +53,7 @@ log() {
 # {{{ obtain_volume_ids()
 
 obtain_volume_ids() {
-  my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
+  local my_instance_id=`GET http://169.254.169.254/latest/meta-data/instance-id`
 
   volume_ids=`aws ec2 describe-volumes \
     --filters \
@@ -63,7 +63,7 @@ obtain_volume_ids() {
     --query "Volumes[*].[VolumeId]" \
     --output text`
 
-  retval=$?
+  local retval=$?
 
   if [ $retval != 0 ]; then
     log ERROR  "Can't obtain VolumeId [CODE=$retval]"
@@ -75,15 +75,15 @@ obtain_volume_ids() {
 # {{{ create_snapshot()
 
 create_snapshot() {
-  hostname=`hostname`
+  local hostname=`hostname`
 
   for volume_id in $volume_ids; do
-    device=`aws ec2 describe-volumes \
+    local device=`aws ec2 describe-volumes \
       --filters Name=volume-id,Values=$volume_id \
       --query "Volumes[*].Attachments[*].[Device]" \
       --output text`
 
-    retval=$?
+    local retval=$?
 
     if [ $retval != 0 ]; then
       log ERROR  "Can't obtain Device [CODE=$retval]"
@@ -94,13 +94,13 @@ create_snapshot() {
 
     log NOTICE "Taking a snapshot..."
 
-    snapshot_id=`aws ec2 create-snapshot \
+    local snapshot_id=`aws ec2 create-snapshot \
       --volume-id $volume_id \
       --description "Created by aws-ec2-smart-snapshot($hostname) from $volume_id($device)" \
       --query "[SnapshotId]" \
       --output text`
 
-    retval=$?
+    local retval=$?
 
     if [ $retval != 0 ]; then
       log ERROR  "Failed to take a snapshot [CODE=$retval]"
@@ -115,7 +115,7 @@ create_snapshot() {
         Key=Name,Value="$hostname $device" \
         Key=CreatedBy,Value=aws-ec2-smart-snapshot
 
-    retval=$?
+    local retval=$?
 
     if [ $retval != 0 ]; then
       log ERROR  "Failed to add tags [CODE=$retval]"
@@ -186,12 +186,12 @@ purge_old() {
 # {{{ freeze_device()
 
 freeze_device() {
-  virt_device=`echo $device | sed 's!/dev/sd!/dev/xvd!'`
+  local virt_device=`echo $device | sed 's!/dev/sd!/dev/xvd!'`
   mount_paths=`grep $virt_device /etc/fstab | awk '{print $2}'`
 
   if [ "$mount_paths" == "" ]; then
-    vg_name=`pvs | grep $virt_device | awk '{print $2}'`
-    mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
+    local vg_name=`pvs | grep $virt_device | awk '{print $2}'`
+    local mount_paths=`grep $vg_name /etc/fstab | awk '{print $2}'`
   fi
 
   if [ "$mount_paths" == "" ]; then
