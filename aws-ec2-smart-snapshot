@@ -180,6 +180,8 @@ purge_old() {
       fi
     done
   done
+
+  rm -f /tmp/snapshots.lst
 }
 
 # }}}
