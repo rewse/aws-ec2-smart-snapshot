@@ -58,7 +58,7 @@ obtain_volume_ids() {
   volume_ids=`aws ec2 describe-volumes \
     --filter \
       Name=attachment.instance-id,Values=$my_instance_id \
-      Name=tag-key,Values="Do Smart Snapshot" \
+      Name=tag-key,Values="Need Auto-Snapshot" \
       Name=tag-value,Values=yes \
     --query "Volumes[*].[VolumeId]" \
     --output text`
