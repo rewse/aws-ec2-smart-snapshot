@@ -75,7 +75,7 @@ obtain_volume_ids() {
 # {{{ create_snapshot()
 
 create_snapshot() {
-  local hostname=`hostname`
+  local hostname=`hostname -s`
 
   for volume_id in $volume_ids; do
     local device=`aws ec2 describe-volumes \
@@ -112,7 +112,7 @@ create_snapshot() {
     aws ec2 create-tags \
       --resources $snapshot_id \
       --tags \
-        Key=Name,Value="$hostname $device" \
+        Key=Name,Value="$hostname:$device" \
         Key=CreatedBy,Value=aws-ec2-smart-snapshot
 
     local retval=$?
