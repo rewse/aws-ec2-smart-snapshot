@@ -92,7 +92,7 @@ create_snapshot() {
 
     freeze_device
 
-    log NOTICE "Taking a snapshot..."
+    log NOTICE "Taking a snapshot for $device..."
 
     local snapshot_id=`aws ec2 create-snapshot \
       --volume-id $volume_id \
@@ -204,8 +204,10 @@ freeze_device() {
   fi
 
   for mount_path in $mount_paths; do
-    log NOTICE "Freezing $mount_path..."
-    xfs_freeze -f $mount_path
+    if [ "$mount_path" != "/" ]; then
+      log NOTICE "Freezing $mount_path..."
+      xfs_freeze -f $mount_path
+    fi
   done
 }
 
@@ -214,8 +216,10 @@ freeze_device() {
 
 unfreeze_device() {
   for mount_path in $mount_paths; do
-    log NOTICE "Unfreezing $mount_path..."
-    xfs_freeze -u $mount_path
+    if [ "$mount_path" != "/" ]; then
+      log NOTICE "Unfreezing $mount_path..."
+      xfs_freeze -u $mount_path
+    fi
   done
 }
 
